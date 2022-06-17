@@ -1,18 +1,18 @@
-import express from "express";
-import exphbs from "express";
-import path from "path";
-import bCrypt from "bcrypt";
+const express = require("express");
+const exphbs = require("express-handlebars");
+const bCrypt = require("bcrypt");
+const { Router } = require("express");
 
-import session from "express-session";
-import passport from "passport";
-import LocalStrategy from "passport-local";
+const session = require("express-session");
+const passport = require("passport");
+const LocalStrategy = require("passport-local");
 
-import routes from "./routes.js";
-import config from "./config.js";
-import controllersdb from "./controllersdb.js";
-import User from "./models.js";
+const routes = require("./routes");
+const config = require("./config");
+const controllersdb = require("./controllersdb");
+const User = require("./models");
 
-const __dirname = path.resolve();
+const { productosDao, carritosDao } = require("./src/daos/index.js");
 
 passport.use(
   "login",
@@ -90,7 +90,7 @@ const app = express();
 app.engine(".hbs", exphbs({ extname: ".hbs", defaultLayout: "main.hbs" }));
 app.set("view engine", ".hbs");
 
-app.use(express.static(path.join(__dirname, "/views")));
+app.use(express.static(__dirname + "/views"));
 app.use(express.urlencoded({ extended: true }));
 
 const PORT = 8080;
@@ -111,7 +111,70 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-app.get("/", routes.getRoot);
+const productosRouter = new Router();
+
+productosRouter.get("/", async (req, res) => {
+  const productos = await productosDao.listarAll();
+  res.json(productos);
+});
+
+productosRouter.get("/:id", async (req, res) => {
+  res.json(await productosDao.listar(req.params.id));
+});
+
+productosRouter.post("/", soloAdmins, async (req, res) => {
+  res.json({ id: await productosDao.guardar(req.body) });
+});
+
+productosRouter.put("/:id", soloAdmins, async (req, res) => {
+  res.json(await productosDao.actualizar(req.body, req.params.id));
+});
+
+productosRouter.delete("/:id", soloAdmins, async (req, res) => {
+  res.json(await productosDao.borrar(req.params.id));
+});
+
+//--------------------------------------------
+// configuro router de carritos
+
+const carritosRouter = new Router();
+
+carritosRouter.get("/", async (req, res) => {
+  res.json((await carritosDao.listarAll()).map((c) => c.id));
+});
+
+carritosRouter.post("/", async (req, res) => {
+  res.json({ id: await carritosDao.guardar({ productos: [] }) });
+});
+
+carritosRouter.delete("/:id", async (req, res) => {
+  res.json(await carritosDao.borrar(req.params.id));
+});
+
+carritosRouter.get("/:id/productos", async (req, res) => {
+  const carrito = await carritosDao.listar(req.params.id);
+  res.json(carrito.productos);
+});
+
+carritosRouter.post("/:id/productos", async (req, res) => {
+  const carrito = await carritosDao.listar(req.params.id);
+  const producto = await productosDao.listar(req.body.id);
+
+  carrito.productos.push(producto);
+
+  res.json(await carritosDao.actualizar(carrito, carrito.id));
+});
+
+carritosRouter.delete("/:id/productos/:id_prod", async (req, res) => {
+  const carrito = await carritosDao.listar(req.params.id);
+  const producto = await productosDao.listar(req.params.id);
+
+  const element = carrito.productos.find((el) => el.id === producto.id);
+  const index = carrito.productos.indexOf(element);
+  carrito.productos.splice(index, 1);
+
+  res.json(await carritosDao.actualizar(carrito, carrito.id));
+});
 
 //----------------LOGIN------------------//
 app.get("/login", routes.getLogin);

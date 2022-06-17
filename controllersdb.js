@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 let baseDeDatosConectada = false;
 
@@ -17,4 +17,6 @@ function conectarDB(url, callback) {
   );
 }
 
-export default { conectarDB };
+module.exports = {
+  conectarDB,
+};

@@ -1,11 +1,3 @@
-import path from "path";
-
-const __dirname = path.resolve();
-
-function getRoot(req, res) {
-  res.send("Bienvenido");
-}
-
 //----------------LOGIN------------------//
 function getLogin(req, res) {
   if (req.isAuthenticated()) {
@@ -17,15 +9,14 @@ function getLogin(req, res) {
       apellido: user.lastName,
       email: user.email,
     });
-    console.log(__dirname);
   } else {
     console.log("User no logueado");
-    res.sendFile(path.join(__dirname, "/views/login.html"));
+    res.sendFile(__dirname + "/views/login.html");
   }
 }
 
 function postLogin(req, res) {
-  res.sendFile(path.join(__dirname, "/views/index.html"));
+  res.sendFile(__dirname + "/views/index.html");
 }
 
 function getFailedLogin(req, res) {
@@ -34,17 +25,17 @@ function getFailedLogin(req, res) {
 
 function getLogout(req, res) {
   req.logout();
-  res.sendFile(path.join(__dirname, "/views/index.html"));
+  res.sendFile(__dirname + "/views/index.html");
 }
 
 //----------------REGISTER------------------//
 
 function getSignUp(req, res) {
-  res.sendFile(path.join(__dirname + "/views/signup.html"));
+  res.sendFile(__dirname + "/views/signup.html");
 }
 
 function postSignUp(req, res) {
-  res.sendFile(path.join(__dirname + "/views/index.html"));
+  res.sendFile(__dirname + "/views/index.html");
 }
 
 function getFailedSignUp(req, res) {
@@ -55,14 +46,13 @@ function failedRoute(req, res) {
   res.status(404).render("routing-error", {});
 }
 
-export default {
-  failedRoute,
-  getFailedLogin,
-  getFailedSignUp,
+module.exports = {
   getLogin,
-  getLogout,
-  getRoot,
   getSignUp,
   postLogin,
   postSignUp,
+  getFailedLogin,
+  getFailedSignUp,
+  getLogout,
+  failedRoute,
 };
